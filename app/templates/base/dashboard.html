@@ -1,0 +1,28 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+</div>
+<div class="row">
+    <div class="col-md-3 text-center text-danger">
+        <h3>My Point</h3>
+        <p class="display-1 text-danger">{{my_point}}</p>
+    </div>
+    <div class="col-md-3 text-center text-primary">
+        <h3>Village Point</h3>
+        <p class="display-1 text-primary">{{village_point}}</p>
+    </div>
+    {% if not request.session.admin_view %}
+        <div class="col-md-6 text-start ps-5">
+            <h4>Quote of this week</h4>
+            <p class="p-3 fs-5">{{quote.quote}}</p>
+        </div>
+    {% else %}
+        <div class="col-md-6 text-start ps-5">
+            <h4>Quote of this week</h4>
+            <form action="{% url 'set_quote' %}" method="POST">
+                {% csrf_token %}
+                <textarea name="quote" id="" rows="3" class="form-control">{{quote.quote}}</textarea>
+                <button class="btn btn-primary py-0 mt-2">set</button>
+            </form>
+        </div>
+    {% endif %}
+</div>

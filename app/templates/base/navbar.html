@@ -1,0 +1,166 @@
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+    <div class="position-sticky pt-3">
+        <div class="px-3">
+            <div class="d-flex {% if request.session.admin_view %}bg-danger{% endif %}">
+                {% if user.photo %}
+                    <img src="{{user.photo.url}}" alt="" style="width: 100px; height: 100px;">
+                {% endif %}
+                <div class="ms-2">
+                    {% if is_manager and not request.session.admin_view %}
+                        <p class="align-top h6">{{user.first_name}} {{user.last_name}}</p>
+                        <a href="{% url 'admin_view' %}"><span>Admin View</span></a>
+                    {% elif is_manager and request.session.admin_view %}
+                        <p class="align-top h6 text-white">Admin {{user.first_name}}</p>
+                        <a href="{% url 'user_view' %}" class="text-white"><span>User View</span></a>
+                    {% else %}
+                        <p class="align-top h6">{{user.first_name}} {{user.last_name}}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <hr>
+            <div>
+                <span>Current Time:</span>
+                <p>{% now "H:i A | d F Y" %}</p>
+                {% if not request.session.clocked_in %}
+                    <div class="mb-2">
+                        <form action="{% url 'clock_in' %}" method="POST">
+                            {% csrf_token %}
+                            <button class="btn btn-success form-control">Clock In</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="mb-2">
+                        <form action="{% url 'clock_out' %}" method="POST">
+                            {% csrf_token %}
+                            <button class="btn btn-danger form-control">Clock Out</button>
+                            <div class="mt-3">
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if message.tags == 'error' %}
+                                            <span class="text-danger">{{message}}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                <textarea name="task" id="" rows="3" class="form-control" placeholder="Task Description"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+                <!-- Button trigger modal -->
+                <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@getbootstrap">Forgot to clock out yesterday?</a>
+            </div>
+            <hr>
+        </div>
+        <ul class="nav flex-column">
+            {% if not request.session.admin_view %}
+                <li class="nav-item">
+                    {% if 'home' in request.path %}
+                        <a class="nav-link active" aria-current="page" href="{% url 'home' %}">
+                    {% else %}
+                        <a class="nav-link" aria-current="page" href="{% url 'home' %}">
+                    {% endif %}
+                        <span data-feather="home"></span>
+                    Clock In/Out
+                    </a>
+                </li>
+                <li class="nav-item">
+                    {% if 'points' in request.path %}
+                        <a class="nav-link active" href="{% url 'points' %}">
+                    {% else %}
+                        <a class="nav-link" href="{% url 'points' %}">
+                    {% endif %}
+                        <span data-feather="file"></span>
+                    Point
+                    </a>
+                </li>
+                <li class="nav-item">
+                    {% if 'report' in request.path %}
+                        <a class="nav-link active" href="{% url 'report' %}">
+                    {% else %}
+                        <a class="nav-link" href="{% url 'report' %}">
+                    {% endif %}
+                        <span data-feather="shopping-cart"></span>
+                    Daily Report
+                    </a>
+                </li>
+                <li class="nav-item">
+                    {% if 'setting' in request.path %}
+                        <a class="nav-link active" href="{% url 'settings' %}">
+                    {% else %}
+                        <a class="nav-link" href="{% url 'settings' %}">
+                    {% endif %}
+                        <span data-feather="users"></span>
+                    Settings
+                    </a>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    {% if 'home' in request.path %}
+                        <a class="nav-link active" href="{% url 'home' %}">
+                    {% else %}
+                        <a class="nav-link" href="{% url 'home' %}">
+                    {% endif %}
+                        <span data-feather="file"></span>
+                    Manage Employee
+                    </a>
+                </li>
+                <li class="nav-item">
+                    {% if 'daily_updates' in request.path %}
+                        <a class="nav-link active" href="{% url 'daily_updates' %}">
+                    {% else %}
+                        <a class="nav-link" href="{% url 'daily_updates' %}">
+                    {% endif %}
+                        <span data-feather="shopping-cart"></span>
+                    Daily Updates
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            {% if clockedIn_yesterday %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">
+                    <span>Current Time: {% now "H:i A | d F Y" %}</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'clock_out_yesterday' %}" method="POST">
+                    {% csrf_token %}
+                    <button class="btn btn-danger form-control">Clock Out</button>
+                    <select name="clock_out" id="" class="form-control mt-3">
+                        {% for time in times %}
+                            <option value="{{time}}">{{time}}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="mt-3">
+                        {% if messages %}
+                            {% for message in messages %}
+                                {% if message.tags == 'error' %}
+                                    <span class="text-danger">{{message}}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        <textarea name="task" id="" rows="3" class="form-control" placeholder="Task Description"></textarea>
+                    </div>
+                </form>
+            </div>
+            {% else %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">
+                    <span class="text-danger">Did you clock in yesterday? Contact admin!!</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
