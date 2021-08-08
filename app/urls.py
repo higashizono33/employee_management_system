@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import *
+from accounts.views import SignUpView
 
 urlpatterns = [
+    path('', SignUpView.as_view()),
     path('home', HomeView.as_view(), name='home'),
     path('clockin', clock_in, name='clock_in'),
     path('clockout', clock_out, name='clock_out'),

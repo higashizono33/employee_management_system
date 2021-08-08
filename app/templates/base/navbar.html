@@ -1,11 +1,11 @@
 <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-    <div class="position-sticky pt-3">
+    <div class="position-sticky pt-5">
         <div class="px-3">
             <div class="d-flex {% if request.session.admin_view %}bg-danger{% endif %}">
                 {% if user.photo %}
                     <img src="{{user.photo.url}}" alt="" style="width: 100px; height: 100px;">
                 {% endif %}
-                <div class="ms-2">
+                <div class="ms-2 mt-2">
                     {% if is_manager and not request.session.admin_view %}
                         <p class="align-top h6">{{user.first_name}} {{user.last_name}}</p>
                         <a href="{% url 'admin_view' %}"><span>Admin View</span></a>
@@ -16,6 +16,9 @@
                         <p class="align-top h6">{{user.first_name}} {{user.last_name}}</p>
                     {% endif %}
                 </div>
+                {% if request.session.admin_view %}
+                <div class="bg-danger position-absolute" style="top: 0px; left: 0px; z-index: -1; width: 240px; height: 165px;"></div>
+                {% endif %}
             </div>
             <hr>
             <div>
@@ -41,7 +44,7 @@
                                         {% endif %}
                                     {% endfor %}
                                 {% endif %}
-                                <textarea name="task" id="" rows="3" class="form-control" placeholder="Task Description"></textarea>
+                                <textarea name="task" id="" rows="5" class="form-control" placeholder="Enter Task at the clock-out" style="font-size: 14px;"></textarea>
                             </div>
                         </form>
                     </div>
@@ -133,11 +136,17 @@
                 <form action="{% url 'clock_out_yesterday' %}" method="POST">
                     {% csrf_token %}
                     <button class="btn btn-danger form-control">Clock Out</button>
-                    <select name="clock_out" id="" class="form-control mt-3">
+                    <div class="d-flex align-items-center mt-3">
+                        <div class="col-6">
+                            <span class="fs-6">Yesterday: {{yesterday|date:"d F Y"}}</span>
+                        </div>
+                        <input type="time" name="clock_out" id="" class="form-control">
+                    </div>
+                    <!-- <select name="clock_out" id="" class="form-control mt-3">
                         {% for time in times %}
                             <option value="{{time}}">{{time}}</option>
                         {% endfor %}
-                    </select>
+                    </select> -->
                     <div class="mt-3">
                         {% if messages %}
                             {% for message in messages %}

@@ -29,6 +29,7 @@ class Employee(models.Model):
     def get_point(self):
         point = Point.get_total(Point, self.id)
         ex_point = ExtraPoint.get_total(ExtraPoint, self.id)
+        without_report = ExtraPoint.objects.filter(employee=self).aggregate(models.Sum('ex_point'))
         if point['earned__sum'] is None and ex_point['ex_point__sum'] is None:
             my_point = 0
         elif point['earned__sum'] is None:
@@ -37,6 +38,9 @@ class Employee(models.Model):
             my_point = point['earned__sum']
         else:
             my_point = point['earned__sum'] + ex_point['ex_point__sum']
+        # to include extra point without assigned report
+        if without_report['ex_point__sum']:
+            my_point += without_report['ex_point__sum']
 
         return my_point
     
@@ -70,7 +74,7 @@ class Manager(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'M-{self.user.first_name} {self.user.last_name}'
+        return f'Manager-{self.user.first_name} {self.user.last_name}'
 
 class TimeCard(models.Model):
     employee = models.ForeignKey(Employee, related_name='timecards', on_delete=CASCADE)
@@ -169,6 +173,7 @@ class Point(models.Model):
 
 class ExtraPoint(models.Model):
     report = models.ForeignKey(Report, related_name='ex_points', on_delete=CASCADE, null=True)
+    employee = models.ForeignKey(Employee, related_name='ex_points', on_delete=CASCADE, null=True)
     created_by = models.ForeignKey(Manager, related_name='give_points', on_delete=CASCADE)
     ex_point = models.DecimalField(max_digits=4, decimal_places=2)
     reason = models.TextField()
@@ -176,12 +181,17 @@ class ExtraPoint(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'EX_Point-Report-ID#{self.report.id}'
+        return f'EX_Point-ID#{self.id}'
 
     def get_total(self, employee_id):
         employee = get_object_or_404(Employee, pk=employee_id)
         reports = Report.objects.filter(created_by=employee)
+        # without_report = 0
+        # if self.employee:
+        #     without_report = ExtraPoint.objects.filter(employee=employee).aggregate(models.Sum('ex_point'))
+        # print(without_report)
         total = ExtraPoint.objects.filter(report__in=reports).aggregate(models.Sum('ex_point'))
+        # print(total)
         return total
     
     def get_grand_total(self):

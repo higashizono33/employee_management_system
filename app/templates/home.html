@@ -22,7 +22,6 @@
 {% endblock %}
 
 {% block content %}
-<body>
     {% include 'base/header.html' %}
     <div class="container-fluid">
         <div class="row">
@@ -30,13 +29,14 @@
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 {% include 'base/dashboard.html' %}
                 {% if not request.session.admin_view %}
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mt-5 mb-3 border-bottom">
+                    <h3 class="h2">Time Card History</h3>
+                </div>
                     <form action="" method="get" class="mb-5" id="filter_form">
                         <div class="row">
                             <div class="col-3">
                                 {{filter.form.employee|as_crispy_field}}
                             </div>
-                        </div>
-                        <div class="row">
                             <div class="col-3">
                                 {{filter.form.date_range|as_crispy_field}}
                             </div>
@@ -48,47 +48,72 @@
                             <div class="col-3">
                                 {{filter.form.end_date|as_crispy_field}}
                             </div>
+                            <div class="col-1 pt-3">
+                                <input type="submit" class="btn btn-secondary" value="Filter">
+                            </div>
                         </div>
-                        <input type="submit" class="btn btn-secondary" value="Filter">
                     </form>
                     <div class="table-responsive">
-                        <table class="table table-striped table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Clock-in</th>
-                                    <th>Clock-out</th>
-                                    <th>Time Spent(hrs)</th>
-                                    <th>Point Earned</th>
-                                    <th>Task Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for card in cards %}
-                                <tr>
-                                    <td>{{card.clock_in|date:'M d Y'}}</td>
-                                    <td>{{card.clock_in|date:'h:i A'}}</td>
-                                    {% if card.clock_out %}
-                                        <td>{{card.clock_out|date:'h:i A'}}</td>
-                                        <td>{{card.get_spent_time}}</td>
-                                        <td>{{card.get_point}}</td>
-                                        <td>{{card.task}}</td>
-                                    {% else %}
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                    {% endif %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        <div class="pagination justify-content-end">
+                            <span class="step-links">
+                                {% if page_obj.has_previous %}
+                                    <a id="prev" href="?page={{ page_obj.previous_page_number }}">previous</a>
+                                {% else %}
+                                    <span style="display: none;">previous</span>
+                                {% endif %}
+                
+                                <span class="current">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                                </span>
+                
+                                {% if page_obj.has_next %}
+                                    <a id="next" href="?page={{ page_obj.next_page_number }}">next</a>
+                                {% else %}
+                                    <span style="display: none;">next</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div id="ajax_table_result">
+                            <table class="table table-striped fs-6">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Clock-in</th>
+                                        <th>Clock-out</th>
+                                        <th>Spent(hrs)</th>
+                                        <th>Point Earned</th>
+                                        <th>Task Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for card in cards %}
+                                    <tr>
+                                        <td>{{card.clock_in|date:'M d Y'}}</td>
+                                        <td>{{card.clock_in|date:'h:i A'}}</td>
+                                        {% if card.clock_out %}
+                                            <td>{{card.clock_out|date:'h:i A'}}</td>
+                                            <td>{{card.get_spent_time}}</td>
+                                            <td>{{card.get_point}}</td>
+                                            <td>{{card.task}}</td>
+                                        {% else %}
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 {% else %}
-                    <h3 class="mb-4">Manage Employee</h3>
-                    <a href="" data-bs-toggle="modal" data-bs-target="#staticBackdrop" class="d-block text-end me-5">New</a>
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mt-5 mb-3 border-bottom">
+                        <h3 class="h2">Manage Employee</h3>
+                    </div>
+                    <!-- <a href="" data-bs-toggle="modal" data-bs-target="#staticBackdrop" class="d-block text-end me-5">New</a> -->
                     <!-- Modal New Profile -->
-                    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                    <!-- <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered modal-xl">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -138,9 +163,9 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-sm">
+                        <table class="table table-striped fs-6">
                             <thead>
                                 <tr>
                                     <th>Employee Name</th>
@@ -153,6 +178,7 @@
                             </thead>
                             <tbody>
                                 {% for employee in employees %}
+                                    {% if not employee.user.is_superuser %}
                                     <tr>
                                         <td>{{employee.user.first_name}} {{employee.user.last_name}}</td>
                                         <td>{{employee.user.email}}</td>
@@ -184,11 +210,11 @@
                                                             <h3 class="mb-3">AWARD EXTRA POINTS</h3>
                                                             <form action="{% url 'add_point' %}" method="POST">
                                                                 {% csrf_token %}
-                                                                <input type="hidden" name="report_id" value="{{report.id}}">
+                                                                <input type="hidden" name="employee_id" value="{{employee.id}}">
                                                                 <input type="number" class="form-control mb-3" placeholder="Points Value" name="ex_point">
                                                                 <textarea name="reason" id="" rows="3" class="form-control mb-3" placeholder="Reason for adding points"></textarea>
                                                                 <div class="d-flex justify-content-end">
-                                                                    <button class="btn btn-primary px-5">Update Employee</button>
+                                                                    <button class="btn btn-primary px-5">Give Points</button>
                                                                 </div>
                                                             </form>
                                                         </div>
@@ -223,12 +249,16 @@
                                                                     <div class="col-6">
                                                                         <h3 class="mb-3">Employee Profile</h3>
                                                                         {% csrf_token %}
+                                                                        <label for="">*first name</label>
                                                                         <span class='error-first_name text-danger'></span>
                                                                         {% render_field form.first_name type="input" class="form-control mb-3" value=employee.user.first_name %}
+                                                                        <label for="">*last name</label>
                                                                         <span class='error-last_name text-danger'></span>
                                                                         {% render_field form.last_name type="input" class="form-control mb-3" value=employee.user.last_name %}
+                                                                        <label for="">*email</label>
                                                                         <span class='error-email text-danger'></span>
                                                                         {% render_field form.email type="input" class="form-control mb-3" value=employee.user.email %}
+                                                                        <label for="">*user or admin</label>
                                                                         <select name="role" id="" class="form-control mb-3">
                                                                             {% if employee.is_manager %}
                                                                                 <option value="user">User</option>
@@ -238,17 +268,20 @@
                                                                                 <option value="admin">Admin</option>
                                                                             {% endif %}
                                                                         </select>
+                                                                        <label for="">*date joined</label>
                                                                         <input type="date" name="date_joined" value="{{employee.user.date_joined|date:'Y-m-d'}}" class="form-control mb-3">
                                                                     </div>
                                                                     <div class="col-6">
                                                                         <h3 class="mb-3">Update Points</h3>
                                                                         <input type="hidden" name="employee_id" value="{{employee.id}}">
+                                                                        <label for="">*hourly point rate</label>
                                                                         <input type="number" step=0.5 name="rate" class="form-control mb-3" value="{{employee.get_rate.rate}}">
+                                                                        <label for="">*effective date</label>
                                                                         <input type="date" name="effective_date" class="form-control mb-3" value="{{employee.get_rate.effective_date|date:'Y-m-d'}}">
                                                                     </div>
                                                                 </div>
                                                                 <div class="d-flex justify-content-end">
-                                                                    <button class="btn btn-success px-5">Add</button>
+                                                                    <button class="btn btn-success px-5">Update</button>
                                                                 </div>
                                                             </form>
                                                         </div>
@@ -260,6 +293,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -269,5 +303,7 @@
         </div>
     </div>
     {% include 'base/script.html' %}
-</body>
+{% endblock %}
+{% block javascript %}
+<script src="{% static 'js/pagination.js' %}"></script>
 {% endblock %}

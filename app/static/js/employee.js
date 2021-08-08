@@ -7,7 +7,13 @@ $(document).ready(function(){
             url: 'update_employee',
             success: function(response){
                 if(response.errors == null)
-                    location.reload()
+                    $('table').html(response.success)
+                    $('.modal-btn').hover(function(){
+                        $(this).removeClass('hide');
+                    }, function(){
+                        $(this).addClass('hide');
+                    })
+                
                 if(response.errors.first_name)
                     $('.error-first_name').html(response.errors.first_name)
                 else

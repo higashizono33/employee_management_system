@@ -5,7 +5,7 @@ from .models import Employee, Manager, Point, PointRate, Report, TimeCard, Extra
 from django.contrib import messages
 from datetime import datetime, timedelta, date
 from django.utils import timezone
-from decimal import Decimal
+from decimal import Context, Decimal
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from .forms import PasswordResetForm, ProfileUpdateForm
@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django_filters.views import FilterView
 from .filters import PointFilter, TimeCardFilter, ReportFilter
+from django.template.loader import render_to_string
 
 class HomeView(LoginRequiredMixin, FilterView):
     template_name = 'home.html'
@@ -22,6 +23,12 @@ class HomeView(LoginRequiredMixin, FilterView):
     login_url = '/accounts/login/'
     redirect_field_name = 'redirect_to'
     filterset_class = TimeCardFilter
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super(HomeView, self).get_queryset()
+        queryset = TimeCard.objects.all().order_by('-created_at')
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -51,6 +58,7 @@ class HomeView(LoginRequiredMixin, FilterView):
                 self.request.session['card_id'] = cards.first().id
             
         yesterday = datetime.strptime(str(date.today()-timedelta(days=1)),"%Y-%m-%d")
+        context['yesterday'] = yesterday
         work_start = yesterday.replace(hour=9, minute=00)
         date_list = [work_start + timedelta(minutes=30*x) for x in range(0, 30)]
         datetext=[x.strftime('%B %d, %Y - %I:%M%p') for x in date_list]
@@ -63,7 +71,6 @@ class HomeView(LoginRequiredMixin, FilterView):
         yesterday_card = TimeCard.objects.filter(employee=employee).filter(clock_in__date=yesterday)
         if yesterday_card:
             context['clockedIn_yesterday'] = True
-
         return context
 
 def clock_in(request):
@@ -133,6 +140,12 @@ class PointView(FilterView):
     model = Point
     context_object_name = 'points'
     filterset_class = PointFilter
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super(PointView, self).get_queryset()
+        queryset = Point.objects.all().order_by('-created_at')
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -176,6 +189,7 @@ class ReportView(TemplateView):
         else:
             context['my_point'] = point['earned__sum'] + ex_point['ex_point__sum']
         context['village_point'] = Point.get_grand_total(Point)['earned__sum'] + ExtraPoint.get_grand_total(ExtraPoint)['ex_point__sum']
+        context['quote'] = Quote.objects.last()
         return context
     
     def post(self, request):
@@ -255,9 +269,10 @@ def user_view(request):
 
 def set_quote(request):
     if request.method == 'POST':
-        manager = get_object_or_404(Manager, user=request.user)
+        manager = Manager.objects.filter(user=request.user)
+        print(manager)
         Quote.objects.create(
-            created_by = manager,
+            created_by = manager[0],
             quote = request.POST['quote']
         )
         return redirect('home')
@@ -269,6 +284,11 @@ class AdminReportView(LoginRequiredMixin, FilterView):
     login_url = '/accounts/login/'
     redirect_field_name = 'redirect_to'
     filterset_class = ReportFilter
+
+    def get_queryset(self):
+        queryset = super(AdminReportView, self).get_queryset()
+        queryset = Report.objects.all().order_by('-created_at')
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -309,18 +329,27 @@ class AdminReportView(LoginRequiredMixin, FilterView):
 
 def add_point(request):
     if request.method == 'POST':
+        manager = Manager.objects.filter(user=request.user)
+        if 'employee_id' in request.POST :
+            # employee = Employee.objects.filter(id=request.POST['employee_id'])
+            employee = get_object_or_404(Employee, pk=request.POST['employee_id'])
+        else:
+            employee = None
         try:
             report = get_object_or_404(Report, pk=request.POST['report_id'])
         except:
             report = None
-        manager = get_object_or_404(Manager, user=request.user)
         ExtraPoint.objects.create(
             report = report,
-            created_by = manager,
+            created_by = manager[0],
+            employee = employee,
             ex_point = request.POST['ex_point'],
             reason = request.POST['reason'],
         )
-        return redirect('daily_updates')
+        if employee:
+            return redirect('home')
+        else:
+            return redirect('daily_updates')
 
 def update_employee(request):
     if request.method == 'POST':
@@ -343,6 +372,12 @@ def update_employee(request):
                 rate=request.POST['rate'],
                 effective_date=request.POST['effective_date'],
             )
-            return redirect('home')
+
+            context = {
+                'employees': Employee.objects.all(),
+                'form': ProfileUpdateForm(),
+            }
+            table = render_to_string('partial/table.html', context, request=request)
+            return JsonResponse({'success': table})
         else:
             return JsonResponse({'errors': form.errors})
