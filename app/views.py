@@ -5,7 +5,7 @@ from .models import Employee, Manager, Point, PointRate, Report, TimeCard, Extra
 from django.contrib import messages
 from datetime import datetime, timedelta, date
 from django.utils import timezone
-from decimal import Context, Decimal
+from decimal import Decimal
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from .forms import PasswordResetForm, ProfileUpdateForm
@@ -91,9 +91,7 @@ def clock_out(request):
         card = get_object_or_404(TimeCard, pk=request.session['card_id'])
         if len(request.POST['task']) < 15:
             messages.error(request, "Please enter at least 15 charactors for today's task")
-        elif card.clock_in.date() != datetime.today().date():
-            print(card.clock_in.date())
-            print(datetime.today().date())
+        elif timezone.localtime(card.clock_in).date() != datetime.today().date():
             messages.error(request, "You can't clock out for the past. Go link in below")
         else:        
             card.clock_out = timezone.now()
@@ -121,7 +119,9 @@ def clock_out_yesterday(request):
         elif card_yesterday.clock_out is not None:
             messages.error(request, "You did clock out yesterday, No Worries")
         else:
-            clock_out_unaware = datetime.strptime(request.POST['clock_out'], '%B %d, %Y - %I:%M%p')
+            yesterday = str(date.today()-timedelta(days=1))
+            clock_out_unaware = datetime.strptime(yesterday +' - '+ request.POST['clock_out'], '%Y-%m-%d - %H:%M')
+            print(clock_out_unaware)
             clock_out_aware = timezone.make_aware(clock_out_unaware, timezone.get_current_timezone())
             card_yesterday.clock_out = clock_out_aware
             card_yesterday.task = request.POST['task']
@@ -331,7 +331,6 @@ def add_point(request):
     if request.method == 'POST':
         manager = Manager.objects.filter(user=request.user)
         if 'employee_id' in request.POST :
-            # employee = Employee.objects.filter(id=request.POST['employee_id'])
             employee = get_object_or_404(Employee, pk=request.POST['employee_id'])
         else:
             employee = None

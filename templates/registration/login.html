@@ -29,28 +29,24 @@
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-5">
-        <!-- <div class="card p-2">
-            <div class="card-body"> -->
-                <form action="{% url 'login' %}" method="POST" novalidate class="form-horizontal" role="form">
-                    <div class="d-flex">
-                        {% if messages %}
-                        {% for message in messages %}
-                        <div class="alert alert-success px-3 py-1 ms-3" role="alert">
-                            {{message}}
-                        </div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                    <h2 class="mb-4 text-center">Log In</h2>
-                    {% csrf_token %}
-                    {{form|crispy}}
-                    <div class="mt-5 text-center">
-                        <button type="submit" class="btn btn-success px-5">Log In</button>
-                        <a href="{% url 'signup' %}" class="btn btn-link d-block">Don't have an account? SignUp</a>
-                    </div>
-                </form>
-            <!-- </div>
-        </div> -->
+        <form action="{% url 'login' %}" method="POST" novalidate class="form-horizontal" role="form">
+            <div class="d-flex">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-success px-3 py-1 ms-3" role="alert">
+                    {{message}}
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+            <h2 class="mb-4 text-center">Log In</h2>
+            {% csrf_token %}
+            {{form|crispy}}
+            <div class="mt-5 text-center">
+                <button type="submit" class="btn btn-success px-5">Log In</button>
+                <a href="{% url 'signup' %}" class="btn btn-link d-block">Don't have an account? SignUp</a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

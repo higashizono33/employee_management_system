@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -85,7 +86,8 @@ class TimeCard(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'Card-ID#{self.employee.id}-{self.clock_in.strftime("%m.%d.%Y")}'
+        card_date = timezone.localtime(self.clock_in)
+        return f'Card-ID#{self.employee.id}-{card_date.strftime("%m.%d.%Y")}'
     
     def save(self, *args, **kwargs):
         if not self.clock_out:
